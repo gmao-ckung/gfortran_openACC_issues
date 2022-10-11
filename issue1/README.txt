@@ -1,1 +1,3 @@
 Issue : Gfortran, when using OpenACC, isn't able to have module variables viewable within a subroutine that is executing within an OpenACC Parallel region.  In this example, the 'testMod' module has an array 'test_array', and gfortan (as of version 11.2.0) is not able to execute the 'set_array' subroutine in a parallel region unless 'test_array' is passed in as a parameter.  In short, of the two module procedures, gfortran cannot execute 'set_array_without_param' but is able to execute 'set_array_with_param'
+
+The error "libgomp: cuStreamSynchronize error: an illegal memory access was encountered" is displayed when a gfortran-compiled test code tries to run with "set_array" without a parameter.
