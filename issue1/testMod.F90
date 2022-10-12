@@ -8,7 +8,7 @@ module testMod
 
     public zero_array, array_add_one, allocate_array, print_array
 
-    double precision, public, dimension(:), allocatable :: test_array
+    double precision, dimension(:), allocatable :: test_array
     integer :: array_size = 1000*1000*900
 
     interface zero_array

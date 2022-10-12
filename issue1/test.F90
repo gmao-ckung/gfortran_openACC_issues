@@ -6,8 +6,8 @@ program issue1
     call allocate_array()
 !$acc parallel
 
-    call zero_array(test_array)
-    !call zero_array()
+    ! call zero_array(test_array)
+    call zero_array()
 
     call array_add_one()
 
