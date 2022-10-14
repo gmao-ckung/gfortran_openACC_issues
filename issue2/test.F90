@@ -10,8 +10,6 @@ module testMod
 
     double precision, dimension(:), allocatable :: test_array
 
-!$acc declare create(test_array)
-
     contains
 
     subroutine allocate_array(in_size)
@@ -19,9 +17,7 @@ module testMod
         integer :: in_size
 
         allocate(test_array(in_size))
-#ifdef GNU_OACC
-        call acc_create(test_array)
-#endif
+!$omp target enter data map(alloc:test_array)
 
     end subroutine
 
@@ -29,11 +25,11 @@ module testMod
         integer :: ii, in_size
 
         in_size = size(test_array,1)
-        !$acc parallel loop gang
+!$omp target teams distribute parallel do
         do ii = 1,in_size
             test_array(ii) = 0.0
         enddo
-        !$acc end parallel loop
+
     end subroutine
 
     subroutine lvl_one_add()
@@ -46,43 +42,43 @@ module testMod
         print*, 'in_size = ', in_size
         allocate(sub_array(in_size))
 
-!$acc enter data create(sub_array)
+!$omp target enter data map(alloc:sub_array)
 
         print*,"here 1"
 
-        !$acc parallel loop gang
+!$omp target teams distribute parallel do
         do ii = 1, in_size
             test_array(ii) = 1.0
             sub_array(ii) = 1.0
         enddo
-        !$acc end parallel loop
-        print*,"here 2"
-        call lvl_two_add()
-        print*,"here 3"
-!$acc exit data copyout(sub_array)
+
+        ! print*,"here 2"
+        ! call lvl_two_add()
+        ! print*,"here 3"
+!$acc target exit data map(from:sub_array)
 
         print*,'sum(sub_array) = ', sum(sub_array)
 
-        contains
+!         contains
 
-        subroutine lvl_two_add()
-            integer ii, in_size2
-            in_size2 = size(sub_array,1)
+!         subroutine lvl_two_add()
+!             integer ii, in_size2
+!             in_size2 = size(sub_array,1)
 
-            print*, 'in_size = ', in_size2
+!             print*, 'in_size = ', in_size2
 
-            !$acc parallel loop gang
-            do ii = 1, in_size2
-                sub_array(ii) = sub_array(ii) + 1.0
-            enddo
-            !$acc end parallel loop
-        end subroutine
+! !$omp target teams distribute parallel do
+!             do ii = 1, in_size2
+!                 sub_array(ii) = sub_array(ii) + 1.0
+!             enddo
+
+!         end subroutine
     end subroutine
 
     subroutine check_allocation
 
         ! print*,'Is test_array allocated on device? : ', acc_is_present(test_array)
-        !$acc update host(test_array)
+!$omp target update device(0) from(test_array)
         print*,'sum(test_array) = ', sum(test_array)
 
     end subroutine
