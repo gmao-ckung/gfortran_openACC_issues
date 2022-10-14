@@ -6,11 +6,9 @@ module testMod
 
     private
 
-    public zero_array, allocate_array, check_allocation
+    public zero_array, allocate_array, print_test_array, deallocate_array, array_calc
 
     double precision, dimension(:), allocatable :: test_array
-
-!$acc declare create(test_array)
 
     contains
 
@@ -19,37 +17,52 @@ module testMod
         integer :: in_size
 
         allocate(test_array(in_size))
-#ifdef GNU_OACC
-        call acc_create(test_array)
-#endif
-
+!$omp target enter data map(alloc:test_array)
     end subroutine
 
     subroutine zero_array(in_size)
-!$acc routine gang
         integer :: ii, in_size
-
-        !$acc loop gang
+!$omp target teams distribute parallel do
         do ii = 1,in_size
             test_array(ii) = 0.0
         enddo
+!$omp end target teams distribute parallel do
     end subroutine
 
-    subroutine check_allocation
+    subroutine array_calc(in_size)
+        integer :: ii, in_size
 
-        print*,'Is test_array allocated on device? : ', acc_is_present(test_array)
+!$omp target teams distribute parallel do
+        do ii = 1, in_size
+            test_array(ii) = 1.0
+        enddo
+    end subroutine
 
+    subroutine print_test_array
+        print*,'test_array = ', sum(test_array)
+    end subroutine
+
+    subroutine deallocate_array
+!$omp target exit data map(from:test_array)
     end subroutine
 
 end module
+
 program issue1
     use testMod
     
-    call allocate_array(10)
-    call check_allocation()
+    integer :: sizeA = 900*1000*1000
+
+    call allocate_array(sizeA)
+    
     print*,'Entering parallel region'
-!$acc parallel
-    call zero_array(10)
-!$acc end parallel
+
+    call zero_array(sizeA)
+
+    call array_calc(sizeA)
+
+    call deallocate_array()
+
+    call print_test_array()
 
 end program issue1
